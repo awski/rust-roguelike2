@@ -3,10 +3,22 @@ use tcod::{Console, colors::WHITE};
 const FPS_LIMIT: i32 = 30;
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
+const MAP_WIDTH: i32 = 80;
+const MAP_HEIGHT: i32 = 45;
+
+type Map = Vec<Vec<Tile>>;
+
+const COLOR_DARK_WALL: tcod::colors::Color = tcod::colors::Color { r: 0, g: 0, b: 100 };
+const COLOR_DARK_GROUND: tcod::colors::Color = tcod::colors::Color {
+    r: 50,
+    g: 50,
+    b: 150,
+};
 
 struct World {
     root: tcod::console::Root,
     con: tcod::console::Offscreen,
+    map: Map,
 }
 impl World {
     fn handle_keys(&mut self, player: &mut Object) -> bool {
@@ -27,28 +39,54 @@ impl World {
 
         false
     }
+    fn create_map() -> Map {
+        let mut map = vec![vec![Tile::empty(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
+
+        map[40][20] = Tile::wall();
+        map[30][20] = Tile::wall();
+
+        map
+    }
+    fn render_all(&mut self, objects: &[Object]) {
+        for y in 0..MAP_HEIGHT {
+            for x in 0..MAP_WIDTH {
+                let wall = self.map[x as usize][y as usize].blocked_sight;
+                if wall {
+                    self.con.set_char_background(x, y, COLOR_DARK_WALL, tcod::console::BackgroundFlag::Set);
+                } else {
+                    self.con.set_char_background(x, y, COLOR_DARK_GROUND, tcod::console::BackgroundFlag::Set);
+                }
+            }
+        }
+
+        for obj in objects {
+            obj.draw(&mut self.con);
+        }
+
+        tcod::console::blit(
+            &self.con,
+            (0,0),
+            (SCREEN_WIDTH, SCREEN_HEIGHT),
+            &mut self.root,
+            (0,0),
+            1.0,
+            1.0);
+    }
 }
 
-// struct Player {
-//     pos_x: i32,
-//     pos_y: i32,
-//     glyph: char,
-// }
-
-// impl Player {
-//     fn new() -> Self {
-//         Player {
-//             pos_x: 0,
-//             pos_y: 0,
-//             glyph: '@',
-//         }
-//     }
-
-//     fn set_pos(&mut self, pos_x: i32, pos_y: i32) {
-//         self.pos_x = pos_x;
-//         self.pos_y = pos_y;
-//     } 
-// }
+#[derive(Clone)]
+struct Tile {
+    blocked: bool,
+    blocked_sight: bool,
+}
+impl Tile {
+    fn empty() -> Self {
+        Tile { blocked: false, blocked_sight: false }
+    }
+    fn wall() -> Self {
+        Tile { blocked: true, blocked_sight: true }
+    }
+}
 
 struct Object {
     pos_x: i32,
@@ -79,8 +117,9 @@ fn main() {
         .title("rust-roguelike2")
         .init();
     let main_con = tcod::console::Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
-    let mut world = World { root, con: main_con };
 
+    let mut map = World::create_map();
+    let mut world = World { root, con: main_con, map };
     let mut player = Object::new(10,10,'@',tcod::colors::WHITE);
     let mut npc = Object::new(25,25,'@',tcod::colors::YELLOW);
 
@@ -91,21 +130,13 @@ fn main() {
     tcod::system::set_fps(FPS_LIMIT);
 
     while !world.root.window_closed() {
-        world.con.set_default_foreground(tcod::colors::WHITE);
         world.con.clear();
 
         for obj in &objects {
             obj.draw(&mut world.con);
         }
 
-        tcod::console::blit(
-            &world.con,
-            (0,0),
-            (SCREEN_WIDTH, SCREEN_HEIGHT),
-            &mut world.root,
-            (0,0),
-            1.0,
-            1.0);
+        world.render_all(&objects);
 
         world.root.flush();
         //TODO: fix player ref(by object id?)
