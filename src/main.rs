@@ -1,3 +1,5 @@
+mod map;
+
 use tcod::{Console, colors::WHITE};
 
 const FPS_LIMIT: i32 = 30;
@@ -26,10 +28,10 @@ impl World {
 
         let key = self.root.wait_for_keypress(true);
         match key {
-            Key { code: KeyCode::Up, .. } =>    { player.move_by(0 ,-1); },
-            Key { code: KeyCode::Left, .. } =>  { player.move_by(-1, 0); },
-            Key { code: KeyCode::Right, .. } => { player.move_by(1 , 0); },
-            Key { code: KeyCode::Down, .. } =>  { player.move_by(0 , 1); },
+            Key { code: KeyCode::Up, .. } =>    { player.move_by(self, 0 ,-1); },
+            Key { code: KeyCode::Left, .. } =>  { player.move_by(self, -1, 0); },
+            Key { code: KeyCode::Right, .. } => { player.move_by(self, 1 , 0); },
+            Key { code: KeyCode::Down, .. } =>  { player.move_by(self, 0 , 1); },
             Key { code: KeyCode::Enter, alt: true, .. } => {
                 self.root.set_fullscreen(!self.root.is_fullscreen());
             },
@@ -98,9 +100,11 @@ impl Object {
     fn new(x: i32, y: i32, glyph: char, color: tcod::colors::Color) -> Self {
         Object { pos_x: x, pos_y: y, glyph, color} 
     }
-    fn move_by(&mut self, dx: i32, dy: i32) {
-        self.pos_x += dx;
-        self.pos_y += dy;
+    fn move_by(&mut self, world: &World, dx: i32, dy: i32) {
+        if !world.map[(self.pos_x + dx) as usize][(self.pos_y + dy) as usize].blocked {
+            self.pos_x += dx;
+            self.pos_y += dy;
+        }
     }
     fn draw(&self, console: &mut dyn tcod::console::Console) {
         console.set_default_foreground(self.color);
@@ -116,7 +120,7 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("rust-roguelike2")
         .init();
-    let main_con = tcod::console::Offscreen::new(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let main_con = tcod::console::Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
 
     let mut map = World::create_map();
     let mut world = World { root, con: main_con, map };
