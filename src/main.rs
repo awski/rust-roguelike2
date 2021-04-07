@@ -143,7 +143,7 @@ fn main() {
         world.render_all(&objects);
 
         world.root.flush();
-        //TODO: fix player ref(by object id?)
+        //TODO(#2): fix player ref(by object id?)
         if world.handle_keys(&mut objects[0]) {
             break;
         }
