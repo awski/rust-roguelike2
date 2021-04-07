@@ -112,7 +112,6 @@ impl Object {
     }
 }
 
-
 fn main() {
     let root = tcod::console::Root::initializer()
         .font("res/arial10x10.png", tcod::console::FontLayout::Tcod)
@@ -122,10 +121,9 @@ fn main() {
         .init();
     let main_con = tcod::console::Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
 
-    let mut map = World::create_map();
-    let mut world = World { root, con: main_con, map };
-    let mut player = Object::new(10,10,'@',tcod::colors::WHITE);
-    let mut npc = Object::new(25,25,'@',tcod::colors::YELLOW);
+    let mut world = World { root, con: main_con, map: World::create_map() };
+    let player = Object::new(10,10,'@',tcod::colors::WHITE);
+    let npc = Object::new(25,25,'@',tcod::colors::YELLOW);
 
     let mut objects = Vec::new();
     objects.push(player);
