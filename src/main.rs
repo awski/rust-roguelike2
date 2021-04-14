@@ -1,14 +1,10 @@
 mod map;
 
-use tcod::{Console, colors::WHITE};
+use tcod::Console;
 
 const FPS_LIMIT: i32 = 30;
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
-const MAP_WIDTH: i32 = 80;
-const MAP_HEIGHT: i32 = 45;
-
-type Map = Vec<Vec<Tile>>;
 
 const COLOR_DARK_WALL: tcod::colors::Color = tcod::colors::Color { r: 0, g: 0, b: 100 };
 const COLOR_DARK_GROUND: tcod::colors::Color = tcod::colors::Color {
@@ -20,7 +16,7 @@ const COLOR_DARK_GROUND: tcod::colors::Color = tcod::colors::Color {
 struct World {
     root: tcod::console::Root,
     con: tcod::console::Offscreen,
-    map: Map,
+    map: map::Map,
 }
 impl World {
     fn handle_keys(&mut self, player: &mut Object) -> bool {
@@ -41,17 +37,10 @@ impl World {
 
         false
     }
-    fn create_map() -> Map {
-        let mut map = vec![vec![Tile::empty(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
 
-        map[40][20] = Tile::wall();
-        map[30][20] = Tile::wall();
-
-        map
-    }
     fn render_all(&mut self, objects: &[Object]) {
-        for y in 0..MAP_HEIGHT {
-            for x in 0..MAP_WIDTH {
+        for y in 0..map::MAP_HEIGHT {
+            for x in 0..map::MAP_WIDTH {
                 let wall = self.map[x as usize][y as usize].blocked_sight;
                 if wall {
                     self.con.set_char_background(x, y, COLOR_DARK_WALL, tcod::console::BackgroundFlag::Set);
@@ -73,20 +62,6 @@ impl World {
             (0,0),
             1.0,
             1.0);
-    }
-}
-
-#[derive(Clone)]
-struct Tile {
-    blocked: bool,
-    blocked_sight: bool,
-}
-impl Tile {
-    fn empty() -> Self {
-        Tile { blocked: false, blocked_sight: false }
-    }
-    fn wall() -> Self {
-        Tile { blocked: true, blocked_sight: true }
     }
 }
 
@@ -119,9 +94,9 @@ fn main() {
         .size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .title("rust-roguelike2")
         .init();
-    let main_con = tcod::console::Offscreen::new(MAP_WIDTH, MAP_HEIGHT);
+    let main_con = tcod::console::Offscreen::new(map::MAP_WIDTH, map::MAP_HEIGHT);
 
-    let mut world = World { root, con: main_con, map: World::create_map() };
+    let mut world = World { root, con: main_con, map: map::create_map() };
     let player = Object::new(10,10,'@',tcod::colors::WHITE);
     let npc = Object::new(25,25,'@',tcod::colors::YELLOW);
 
@@ -133,10 +108,6 @@ fn main() {
 
     while !world.root.window_closed() {
         world.con.clear();
-
-        for obj in &objects {
-            obj.draw(&mut world.con);
-        }
 
         world.render_all(&objects);
 
