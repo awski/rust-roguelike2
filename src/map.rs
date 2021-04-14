@@ -1,4 +1,3 @@
-//TODO(#1): rework map impl
 
 pub const MAP_WIDTH: i32 = 80;
 pub const MAP_HEIGHT: i32 = 45;
